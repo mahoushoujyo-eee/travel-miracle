@@ -1,11 +1,12 @@
 app:
   name: travel-planner
   port: 42080
-database:
-  host: localhost
+mysql:
+  host: 156.239.235.71
   port: 3306
-  user: root
-  password: secret
+  database: travelplanner
+  user: travelplanner
+  password: travelplanner
 llm-ark:
   default-model: doubao-seed-1-6-flash-250828
   api-key: 773eac6a-e077-42bd-bd1c-e9836bd5c6b8
@@ -20,3 +21,7 @@ llm-modelscope:
   base-url: https://api-inference.modelscope.cn/v1
 milvus:
   addr: localhost:19530
+oss:
+  region: cn-shanghai
+  img-bucket: travelplanner-img
+  file-bucket: travelplanner-file

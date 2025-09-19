@@ -23,7 +23,6 @@ var servers = []MCPServer{
 	{URL: "https://mcp.api-inference.modelscope.net/9771b53107984b/mcp", Type: "shttp"},
 	{URL: "https://mcp.api-inference.modelscope.net/b1ea70ecdcba49/mcp", Type: "shttp"},
 	{URL: "https://mcp.api-inference.modelscope.net/a6b39c63b2944e/mcp", Type: "shttp"},
-
 }
 
 func InitMcpTools(ctx context.Context) {

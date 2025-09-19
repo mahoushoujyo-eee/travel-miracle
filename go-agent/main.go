@@ -4,9 +4,11 @@ package main
 
 import (
 	"context"
+	"log"
 	"travel/biz/config"
 
 	"github.com/cloudwego/hertz/pkg/app/server"
+	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
 )
 
@@ -20,7 +22,10 @@ func main() {
 }
 
 func loadConfig(ctx context.Context) {
+	loadEnv()
 	loadViper()
+	config.InitDatabase(ctx)
+	config.InitOssClient(ctx)
 	config.InitModel(ctx)
 	config.InitMcpTools(ctx)
 	config.InitVDateBase(ctx)
@@ -35,4 +40,14 @@ func loadViper() {
 	viper.SetConfigType("yaml")
 	// configure viper to read from the current directory
 	viper.AddConfigPath(".") // current directory
+	if err := viper.ReadInConfig(); err != nil {
+		log.Fatalf("Error reading config file: %v", err)
+	}
+}
+
+func loadEnv() {
+	// 加载 .env 文件
+	if err := godotenv.Load(); err != nil {
+		log.Printf("Warning: Error loading .env file: %v", err)
+	}
 }
