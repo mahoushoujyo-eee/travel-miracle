@@ -28,9 +28,9 @@ func loadConfig(ctx context.Context) {
 	config.InitOssClient(ctx)
 	config.InitModel(ctx)
 	config.InitMcpTools(ctx)
-	config.InitVDateBase(ctx)
-	config.InitRetriever(ctx)
-	config.InitIndexer(ctx)
+	// config.InitVDateBase(ctx)
+	// config.InitRetriever(ctx)
+	// config.InitIndexer(ctx)
 }
 
 func loadViper() {

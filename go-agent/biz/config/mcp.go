@@ -5,14 +5,13 @@ import (
 	"log"
 
 	"github.com/cloudwego/eino-ext/components/tool/mcp"
-	"github.com/cloudwego/eino/components/tool"
 	"github.com/cloudwego/eino/compose"
 	"github.com/mark3labs/mcp-go/client"
 	goMcp "github.com/mark3labs/mcp-go/mcp"
 )
 
-var Tools = []tool.BaseTool{}
 var ToolNode *compose.ToolsNode
+var ToolNodeMap = make(map[string]*compose.ToolsNode)
 
 type MCPServer struct {
 	URL string
@@ -22,14 +21,17 @@ type MCPServer struct {
 
 var servers = []MCPServer{
 	{URL: "https://mcp.api-inference.modelscope.net/9771b53107984b/mcp", Type: "shttp", Name:"fetch"},
+	{URL: "https://mcp.api-inference.modelscope.net/4d2d99ac6a974a/mcp", Type: "shttp", Name:"bing"},
 	{URL: "https://mcp.api-inference.modelscope.net/b1ea70ecdcba49/mcp", Type: "shttp", Name:"amp"},
-	{URL: "https://mcp.api-inference.modelscope.net/a6b39c63b2944e/mcp", Type: "shttp", Name:"baidu-map"},
+	{URL: "https://mcp.api-inference.modelscope.net/7355509d0d7341/mcp", Type: "shttp", Name:"baidu-map"},
+	{URL: "https://mcp.api-inference.modelscope.net/fd8a083b572f4c/mcp", Type: "shttp", Name:"12306"},
 }
 
 func InitMcpTools(ctx context.Context) {
 	for _, server := range servers {
 		var cli client.MCPClient
 		var err error
+		var toolNodes *compose.ToolsNode
 		switch server.Type {
 		case "sse":
 			cli, err = client.NewSSEMCPClient(server.URL)
@@ -62,33 +64,25 @@ func InitMcpTools(ctx context.Context) {
 			log.Printf("get mcp tools failed, url: %s, err: %v", server.URL, err)
 			continue
 		}
-
-		Tools = append(Tools, mcpTools...)
 		log.Printf("successfully initialized MCP server: %s, tools count: %d", server.URL, len(mcpTools))
-	}
 
-	log.Printf("mcp tools initialized, total count: %d", len(Tools))
-	
-	if len(Tools) == 0 {
-		log.Printf("no MCP tools available, skipping tool node creation")
-		return
-	}
-	
-	var err error
-	ToolNode, err = compose.NewToolNode(ctx, &compose.ToolsNodeConfig{
-		Tools: Tools,
-	})
-	if err != nil {
-		log.Printf("failed to create tool node: %v", err)
-		return
-	}
-
-	for _, t := range Tools {
-		info, err := t.Info(ctx)
-		if err != nil {
-			panic(err)
+		for _, t := range mcpTools {
+			info, err := t.Info(ctx)
+			if err != nil {
+				log.Printf("failed to get tool info: %v", err)
+				continue
+			}
+			log.Printf("tool name: %s, desc: %s", info.Name, info.Desc)
 		}
-		log.Printf("tool name: %s, desc: %s", info.Name, info.Desc)
+
+		toolNodes, err = compose.NewToolNode(ctx, &compose.ToolsNodeConfig{
+			Tools: mcpTools,
+		})
+		if err != nil {
+			log.Printf("failed to create tool node: %v", err)
+			continue
+		}
+		ToolNodeMap[server.Name] = toolNodes
 	}
 }
 
