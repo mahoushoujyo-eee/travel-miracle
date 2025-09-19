@@ -17,12 +17,13 @@ var ToolNode *compose.ToolsNode
 type MCPServer struct {
 	URL string
 	Type string
+	Name string
 }
 
 var servers = []MCPServer{
-	{URL: "https://mcp.api-inference.modelscope.net/9771b53107984b/mcp", Type: "shttp"},
-	{URL: "https://mcp.api-inference.modelscope.net/b1ea70ecdcba49/mcp", Type: "shttp"},
-	{URL: "https://mcp.api-inference.modelscope.net/a6b39c63b2944e/mcp", Type: "shttp"},
+	{URL: "https://mcp.api-inference.modelscope.net/9771b53107984b/mcp", Type: "shttp", Name:"fetch"},
+	{URL: "https://mcp.api-inference.modelscope.net/b1ea70ecdcba49/mcp", Type: "shttp", Name:"amp"},
+	{URL: "https://mcp.api-inference.modelscope.net/a6b39c63b2944e/mcp", Type: "shttp", Name:"baidu-map"},
 }
 
 func InitMcpTools(ctx context.Context) {

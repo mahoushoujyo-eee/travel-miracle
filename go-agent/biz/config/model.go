@@ -15,6 +15,7 @@ var(
 	DefaultArkModel *ark.ChatModel
 	DefaultMSModel 	*openai.ChatModel
 	ArkEmbeddingModel *embeddingArk.Embedder
+	DefaultVisionModel *ark.ChatModel
 )
 
 func InitModel(ctx context.Context) {
@@ -57,6 +58,19 @@ func InitModel(ctx context.Context) {
 		log.Fatalf("failed to init embedding model, err: %v", err)
 	}
 
+	DefaultVisionModel, err = ark.NewChatModel(ctx, &ark.ChatModelConfig{
+		// 服务配置
+		BaseURL: viper.GetString("llm-vision-ark.base-url"), // 服务地址
+		Region:  "cn-beijing",                               // 区域
+		APIKey: viper.GetString("llm-vision-ark.api-key"), // API Key 认证
+		// 模型配置
+		Model:   viper.GetString("llm-vision-ark.default-model"), // 模型端点 ID
+		Timeout: &timeout,
+	})
+	if err != nil {
+		log.Fatalf("failed to init vision model, err: %v", err)
+	}
+	
 	log.Printf("Model initalized!")
 }
 
