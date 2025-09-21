@@ -29,6 +29,7 @@ var servers = []MCPServer{
 	{URL: "https://mcp.amap.com/mcp?key=00e8609916af1689779cb742ec37e157", Type: "shttp", Name:"amap"},
 	{URL: "https://mcp.map.baidu.com/mcp?ak=gJhL8Ohk5sinS895k1DtYymoTBlWDBYn", Type: "shttp", Name:"baidu-map"},
 	{URL: "https://mcp.api-inference.modelscope.net/fd8a083b572f4c/mcp", Type: "shttp", Name:"12306"},
+	{URL: "https://mcp.api-inference.modelscope.net/ed9399008e044b/mcp", Type: "shttp", Name:"jina"},
 }
 
 func InitMcpTools(ctx context.Context) {

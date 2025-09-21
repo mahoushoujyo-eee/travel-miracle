@@ -12,7 +12,8 @@ import (
 	"github.com/cloudwego/eino/schema"
 )
 
-func main() {
+func main2() {
+	//测试路径推荐agent
 	ctx := context.Background()
 	answer := "根据下面内容为我生成更规范的回复："
 	config.InitAll(ctx)
