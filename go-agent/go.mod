@@ -5,7 +5,7 @@ go 1.23.0
 toolchain go1.24.7
 
 require (
-	github.com/cloudwego/eino v0.4.7
+	github.com/cloudwego/eino v0.5.3
 	github.com/cloudwego/eino-ext/components/embedding/ark v0.1.0
 	github.com/cloudwego/eino-ext/components/indexer/milvus v0.0.0-20250918131725-26709efe4c4d
 	github.com/cloudwego/eino-ext/components/model/ark v0.1.28
@@ -16,7 +16,13 @@ require (
 	github.com/cloudwego/hertz v0.10.2
 	github.com/mark3labs/mcp-go v0.39.1
 	github.com/milvus-io/milvus-sdk-go/v2 v2.4.2
+	github.com/redis/go-redis/v9 v9.14.0
 	github.com/spf13/viper v1.21.0
+)
+
+require (
+	github.com/cespare/xxhash/v2 v2.3.0 // indirect
+	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 )
 
 require (

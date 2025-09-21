@@ -8,10 +8,14 @@ import (
 	"github.com/cloudwego/eino/compose"
 	"github.com/mark3labs/mcp-go/client"
 	goMcp "github.com/mark3labs/mcp-go/mcp"
+    "github.com/cloudwego/eino/components/tool"
 )
 
-var ToolNode *compose.ToolsNode
-var ToolNodeMap = make(map[string]*compose.ToolsNode)
+var(
+	ToolNode *compose.ToolsNode
+	ToolNodeMap = make(map[string]*compose.ToolsNode)
+	ToolMap = make(map[string][]tool.BaseTool)
+) 
 
 type MCPServer struct {
 	URL string
@@ -22,8 +26,8 @@ type MCPServer struct {
 var servers = []MCPServer{
 	{URL: "https://mcp.api-inference.modelscope.net/9771b53107984b/mcp", Type: "shttp", Name:"fetch"},
 	{URL: "https://mcp.api-inference.modelscope.net/4d2d99ac6a974a/mcp", Type: "shttp", Name:"bing"},
-	{URL: "https://mcp.api-inference.modelscope.net/b1ea70ecdcba49/mcp", Type: "shttp", Name:"amp"},
-	{URL: "https://mcp.api-inference.modelscope.net/7355509d0d7341/mcp", Type: "shttp", Name:"baidu-map"},
+	{URL: "https://mcp.amap.com/mcp?key=00e8609916af1689779cb742ec37e157", Type: "shttp", Name:"amap"},
+	{URL: "https://mcp.map.baidu.com/mcp?ak=gJhL8Ohk5sinS895k1DtYymoTBlWDBYn", Type: "shttp", Name:"baidu-map"},
 	{URL: "https://mcp.api-inference.modelscope.net/fd8a083b572f4c/mcp", Type: "shttp", Name:"12306"},
 }
 
@@ -83,6 +87,7 @@ func InitMcpTools(ctx context.Context) {
 			continue
 		}
 		ToolNodeMap[server.Name] = toolNodes
+		ToolMap[server.Name] = mcpTools
 	}
 }
 
