@@ -6,31 +6,12 @@ import (
 	"travel/biz/service"
 
 	"github.com/cloudwego/hertz/pkg/app"
-	"github.com/cloudwego/hertz/pkg/protocol/consts"
+	"github.com/aliyun/alibabacloud-oss-go-sdk-v2/oss"
 )
 
-func GetUploadUrlHandler(ctx context.Context, c *app.RequestContext) {
-	var request param.UploadFileRequest
-	if err := c.BindAndValidate(&request); err != nil {
-		c.JSON(consts.StatusOK, param.Response{
-			Code: consts.StatusBadRequest,
-			Msg:  err.Error(),
-		})
-		return
-	}
-
-	uploadUrl, err := service.NewChatService(ctx, c).GetUploadUrl(&request)
-	if err != nil {
-		c.JSON(consts.StatusOK, param.Response{
-			Code: consts.StatusInternalServerError,
-			Msg:  err.Error(),
-		})
-		return
-	}
-
-	c.JSON(consts.StatusOK, param.Response{
-		Code: consts.StatusOK,
-		Msg:  "success",
-		Data: uploadUrl,
-	})
-}
+// GetUploadUrlHandler 使用通用泛型处理器
+var GetUploadUrlHandler = GenericHandler(
+	func(ctx context.Context, c *app.RequestContext, request *param.UploadFileRequest) (*oss.PresignResult, error) {
+		return service.NewChatService(ctx, c).GetUploadUrl(request)
+	},
+)
