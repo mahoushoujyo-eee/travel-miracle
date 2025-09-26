@@ -5,6 +5,7 @@ package main
 import (
 	"context"
 	"travel/biz/config"
+	"travel/biz/middleware"
 
 	"github.com/cloudwego/hertz/pkg/app/server"
 	"github.com/hertz-contrib/logger/accesslog"
@@ -14,6 +15,7 @@ import (
 func main() {
 	ctx := context.Background()
 	config.InitAll(ctx)
+	middleware.InitAll()
 	h := server.Default(server.WithHostPorts("0.0.0.0:" + viper.GetString("app.port")), server.WithStreamBody(true))
 	h.Use(accesslog.New())
 
