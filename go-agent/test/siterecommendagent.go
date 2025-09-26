@@ -24,7 +24,7 @@ func main(){
 	myAgent := agent.NewAgent(ctx, 
 		"景点推荐小助手", 
 		"根据所给地址推荐景点的助手",
-		fmt.Sprintf("你是一个给用户推荐景点的助手，善于使用工具来联网查找用户所给地点的可游玩景点，并且要考虑当前月份是%v，最后生成总结输出。注意：调用搜索工具次数尽量不要超过五次。", time.Now()), 
+		fmt.Sprintf("你是一个给用户推荐景点的助手，善于使用工具来联网查找用户所给地点的可游玩景点，并且要考虑当前月份是%v，最后生成总结输出。注意：要在搜索两次详情页后总结内容，节省调用的开销。", time.Now()), 
 		allTools)
 
 	myRunner := agent.NewRunner(ctx, myAgent)
