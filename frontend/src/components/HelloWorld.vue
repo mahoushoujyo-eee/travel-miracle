@@ -6,6 +6,16 @@ defineProps({
 })
 
 const count = ref(0)
+
+const methods = () => 
+{
+  getUploadUrl: async () => {
+    const response = await methods().getUploadUrl()
+    console.log(response)
+  }
+}
+
+methods().getUploadUrl()
 </script>
 
 <template>

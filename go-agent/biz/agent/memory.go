@@ -1,1 +1,66 @@
 package agent
+
+import (
+	"context"
+	"travel/biz/config"
+	"travel/biz/model"
+	
+	"github.com/google/uuid"
+)
+
+
+func CreateConversation(ctx context.Context, userId int64) (string, error) {
+	// 生成UUID作为conversationId
+	conversationId := uuid.New().String()
+	
+	// 创建会话记录
+	conversation := &model.Conversation{
+		UserId:         userId,
+		ConversationId: conversationId,
+	}
+	
+	// 保存到数据库
+	if err := config.DB.WithContext(ctx).Create(conversation).Error; err != nil {
+		return "", err
+	}
+	
+	return conversationId, nil
+}
+
+func UpdateConversationTitle(ctx context.Context, conversationId string, title string) error {
+	// 更新会话标题
+	if err := config.DB.WithContext(ctx).Model(&model.Conversation{}).
+		Where("conversation_id = ?", conversationId).
+		Update("title", title).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func GetConversationList(ctx context.Context, userId int64) ([]*model.Conversation, error) {
+	var conversations []*model.Conversation
+	if err := config.DB.WithContext(ctx).Model(&model.Conversation{}).
+		Where("user_id = ?", userId).
+		Find(&conversations).Error; err != nil {
+		return nil, err
+	}
+	return conversations, nil
+}
+
+func InsertMemory(ctx context.Context, conversationId string, memory *model.ChatMemory) error {
+	// 插入内存记录
+	if err := config.DB.WithContext(ctx).Create(memory).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func GetMemoryList(ctx context.Context, conversationId string) ([]*model.ChatMemory, error) {
+	var memories []*model.ChatMemory
+	if err := config.DB.WithContext(ctx).Model(&model.ChatMemory{}).
+		Where("conversation_id = ?", conversationId).
+		Find(&memories).Error; err != nil {
+		return nil, err
+	}
+	return memories, nil
+}
