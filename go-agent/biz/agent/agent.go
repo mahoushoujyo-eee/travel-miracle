@@ -3,6 +3,7 @@ package agent
 import (
 	"context"
 	"fmt"
+	"log"
 	"time"
 	"travel/biz/config"
 
@@ -43,4 +44,50 @@ func InitRecommendRunner(ctx context.Context){
 	systemPrompt := fmt.Sprintf("你是一个可以使用jina和fetch工具帮助他人推荐景点的助手，可以搜索和获取景点信息，根据他人的喜好来推荐合适的景点。当前时间：%s", currentTime)
 	DefaultRecommendAgent = NewAgent(ctx, name, description, systemPrompt, allTools)
     DefaultRecommendRunner = NewRunner(ctx, DefaultRecommendAgent)
+}
+
+func HandleIterator(iterator *adk.AsyncIterator[*adk.AgentEvent]) {
+	for {
+		event, ok := iterator.Next()
+		if !ok {
+			break
+		}
+		if event.Err != nil {
+			// 记录错误但不终止程序，允许继续处理
+			fmt.Printf("\n事件处理错误: %v\n", event.Err)
+		}
+
+		if event.Output.MessageOutput.IsStreaming {
+			stream := event.Output.MessageOutput.MessageStream
+			for {
+				msg, err := stream.Recv()
+				if err != nil {
+					// 检查是否是正常结束或可恢复的错误
+					if err.Error() == "EOF" || msg == nil {
+						fmt.Printf("\n流式传输正常结束\n")
+						break
+					}
+					// 对于超时等网络错误，记录日志但不终止程序
+					fmt.Printf("\n流式传输错误: %v\n", err)
+					break
+				}
+				if msg == nil {
+					break
+				}
+				if msg.Content != ""{
+					fmt.Printf("%v", msg)
+				}
+
+				if msg.ReasoningContent != "" {
+					fmt.Printf("%s", msg.ReasoningContent)
+				}
+			}
+		}else{
+			msg, err := event.Output.MessageOutput.GetMessage()
+			if err != nil {
+				log.Fatal(err)
+			}
+			fmt.Printf("\nmessage:\n%v\n", msg.Content)
+		}
+	}
 }

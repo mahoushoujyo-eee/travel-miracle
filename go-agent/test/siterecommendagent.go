@@ -13,7 +13,7 @@ import (
 	"github.com/cloudwego/eino/schema"
 )
 
-func main(){
+func main1(){
 	ctx := context.Background()
 	var allTools []tool.BaseTool
 	config.InitAll(ctx)

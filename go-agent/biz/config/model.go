@@ -21,7 +21,7 @@ var(
 func InitModel(ctx context.Context) {
 	log.Printf("Initalizing model...")
 
-	timeout := 30 * time.Second
+	timeout := 120 * time.Second  // 增加超时时间到120秒
 
 	var err error
 	DefaultArkModel, err = ark.NewChatModel(ctx, &ark.ChatModelConfig{
