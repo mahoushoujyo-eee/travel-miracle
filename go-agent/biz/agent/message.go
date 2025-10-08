@@ -2,7 +2,9 @@ package agent
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"travel/biz/config"
 
 	"github.com/cloudwego/eino/adk"
 	"github.com/cloudwego/eino/schema"
@@ -49,16 +51,28 @@ func CreateUserMessage(ctx context.Context, conversationId string, prompt string
 	}
 }
 
-
-func GetHistoryMessageList(ctx context.Context, conversationId string, userId int64) ([]adk.Message, string, error) {
+func GetHistoryMessageList(ctx context.Context, conversationId string, userId int64, prompt string) ([]adk.Message, string, error) {
 	var err error
 	var messages []adk.Message
-	log.Printf("GetHistoryMessageList, conversationId: %s, userId: %d", conversationId, userId)
+	log.Printf("GetHistoryMessageList, conversationId: %s, userId: %d, prompt: %s", conversationId, userId, prompt)
 	if conversationId == ""{
 		conversationId, err = CreateConversation(ctx, userId)
 		if err != nil {
 			return nil, conversationId, err
 		}
+		go func() {
+			resp, err := config.DefaultArkModel.Generate(ctx, []*schema.Message{
+				{
+					Role: schema.User,
+					Content: fmt.Sprintf("下面是用户的消息，请直接输出一个总结性的标题：%s", prompt),
+				},
+			})
+			if err != nil {
+				log.Printf("failed to generate title, err: %v", err)
+				return
+			}
+			UpdateConversationTitle(ctx, conversationId, resp.Content)
+		}()
 	}else{
 		chatMemory, err := GetMemoryList(ctx, conversationId)
 		if err != nil {
@@ -76,7 +90,6 @@ func GetHistoryMessageList(ctx context.Context, conversationId string, userId in
 
 	return messages, conversationId, nil
 }
-
 
 func TransformMemoryRoleToMessage(role string) schema.RoleType {
 

@@ -13,30 +13,29 @@ import (
 	"github.com/spf13/viper"
 )
 
-
 type ChatService struct {
 	ctx context.Context
-	c *app.RequestContext
+	c   *app.RequestContext
 }
 
 func NewChatService(ctx context.Context, c *app.RequestContext) *ChatService {
 	return &ChatService{
 		ctx: ctx,
-		c: c,
+		c:   c,
 	}
 }
 
-func (s *ChatService) Chat(request *param.ChatRequest, responseChan chan *param.SSEChatResponse) (error) {
+func (s *ChatService) Chat(request *param.ChatRequest, responseChan chan *param.SSEChatResponse) error {
 	// 添加panic恢复机制，防止程序崩溃
 	defer s.handleChatPanic(request, responseChan)
 
 	conversationId := request.ConversationId
-	messages, conversationId, err := agent.GetHistoryMessageList(s.ctx, conversationId, request.UserId)
+	messages, conversationId, err := agent.GetHistoryMessageList(s.ctx, conversationId, request.UserId, request.Prompt)
 	if err != nil {
 		return err
 	}
 	responseChan <- &param.SSEChatResponse{
-		Type: "start",
+		Type:           "start",
 		ConversationId: conversationId,
 	}
 
@@ -48,8 +47,8 @@ func (s *ChatService) Chat(request *param.ChatRequest, responseChan chan *param.
 	messages = append(messages, userMessage)
 
 	iterator := agent.DefaultPlanRunner.Run(s.ctx, messages)
-	
-	for{
+
+	for {
 		event, ok := iterator.Next()
 		if !ok {
 			break
@@ -71,13 +70,13 @@ func (s *ChatService) Chat(request *param.ChatRequest, responseChan chan *param.
 			content := ""
 			reasoningContent := ""
 			stream := event.Output.MessageOutput.MessageStream
-			
+
 			// 检查stream是否为nil
 			if stream == nil {
 				log.Printf("\n流式传输stream为空，跳过处理\n")
 				continue
 			}
-			
+
 			for {
 				msg, err := stream.Recv()
 				if err != nil {
@@ -97,31 +96,34 @@ func (s *ChatService) Chat(request *param.ChatRequest, responseChan chan *param.
 				if msg.ReasoningContent != "" {
 					reasoningContent += msg.ReasoningContent
 					response := &param.SSEChatResponse{
-						Type: "stream-reasoning",
-						Content: msg.ReasoningContent,
+						Type:           "stream-reasoning",
+						Content:        msg.ReasoningContent,
 						ConversationId: conversationId,
 					}
 					responseChan <- response
 				}
-				if msg.Content != ""{
+				if msg.Content != "" {
 					content += msg.Content
 					response := &param.SSEChatResponse{
-						Type: "stream-chat",
-						Content: msg.Content,
+						Type:           "stream-chat",
+						Content:        msg.Content,
 						ConversationId: conversationId,
 					}
 					responseChan <- response
 				}
 			}
 
-			if content != "" {
-				go agent.InsertMemory(s.ctx, conversationId, "stream-chat", content)
-			}
-			if reasoningContent != "" {
-				go agent.InsertMemory(s.ctx, conversationId, "stream-reasoning", reasoningContent)
-			}
+			go func() {
+				if reasoningContent != "" {
+					agent.InsertMemory(s.ctx, conversationId, "stream-reasoning", reasoningContent)
+				}
+				if content != "" {
+					agent.InsertMemory(s.ctx, conversationId, "stream-chat", content)
+				}
+			}()
+
 			continue
-		}else{
+		} else {
 			var response *param.SSEChatResponse
 
 			// 添加额外的nil检查，防止访问Message时出现panic
@@ -133,16 +135,16 @@ func (s *ChatService) Chat(request *param.ChatRequest, responseChan chan *param.
 			if event.Output.MessageOutput.Message.ToolName != "" {
 				go agent.InsertMemoryWithTool(s.ctx, conversationId, string(event.Output.MessageOutput.Role), event.Output.MessageOutput.Message.Content, event.Output.MessageOutput.Message.ToolName)
 				response = &param.SSEChatResponse{
-					Type: string(event.Output.MessageOutput.Role) + ":" + event.Output.MessageOutput.Message.ToolName,
-					Content: event.Output.MessageOutput.Message.Content,
+					Type:           string(event.Output.MessageOutput.Role) + ":" + event.Output.MessageOutput.Message.ToolName,
+					Content:        event.Output.MessageOutput.Message.Content,
 					ConversationId: conversationId,
 				}
 				log.Printf("\n工具调用: %v\n", event.Output.MessageOutput.Message.ToolCalls)
 			} else {
 				go agent.InsertMemory(s.ctx, conversationId, string(event.Output.MessageOutput.Role), event.Output.MessageOutput.Message.Content)
 				response = &param.SSEChatResponse{
-					Type: string(event.Output.MessageOutput.Role),
-					Content: event.Output.MessageOutput.Message.Content,
+					Type:           string(event.Output.MessageOutput.Role),
+					Content:        event.Output.MessageOutput.Message.Content,
 					ConversationId: conversationId,
 				}
 			}
@@ -158,14 +160,14 @@ func (s *ChatService) GetUploadUrl(request *param.UploadFileRequest) (*oss.Presi
 	switch request.Type {
 	case "image":
 		ossRequest = &param.GetUploadUrlRequest{
-			Bucket: viper.GetString("oss.img-bucket"),
-			Key: request.FileName,
+			Bucket:      viper.GetString("oss.img-bucket"),
+			Key:         request.FileName,
 			ContentType: request.ContentType,
 		}
 	case "file":
 		ossRequest = &param.GetUploadUrlRequest{
-			Bucket: viper.GetString("oss.file-bucket"),
-			Key: request.FileName,
+			Bucket:      viper.GetString("oss.file-bucket"),
+			Key:         request.FileName,
 			ContentType: request.ContentType,
 		}
 	default:
@@ -181,8 +183,8 @@ func (s *ChatService) handleChatPanic(request *param.ChatRequest, responseChan c
 		log.Printf("Chat函数发生panic，已恢复: %v", r)
 		// 发送错误响应给客户端
 		errorResponse := &param.SSEChatResponse{
-			Type: "error",
-			Content: "服务暂时不可用，请稍后重试",
+			Type:           "error",
+			Content:        "服务暂时不可用，请稍后重试",
 			ConversationId: request.ConversationId,
 		}
 		select {

@@ -18,4 +18,9 @@ func GeneratedRegister(r *server.Hertz) {
 	{
 		RegisterChat(chatRouter)
 	}
+
+	conversationRouter := r.Group("/conversation")
+	{
+		RegisterConversation(conversationRouter)
+	}
 }
