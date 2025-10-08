@@ -5,7 +5,6 @@ import (
 	"travel/biz/config"
 	"travel/biz/model"
 
-	"github.com/cloudwego/eino/adk"
 	"github.com/google/uuid"
 )
 
@@ -48,11 +47,12 @@ func GetConversationList(ctx context.Context, userId int64) ([]*model.Conversati
 	return conversations, nil
 }
 
-func InsertMemory(ctx context.Context, conversationId string, messageVariant *adk.MessageVariant) error {
+func InsertMemory(ctx context.Context, conversationId string, eventType string, content string) error {
 	// TODO: 处理类型转换
 	memory := &model.ChatMemory{
 		ConversationId: conversationId,
-		Prompt:         messageVariant.Message.Content,
+		Prompt:         content,
+		Type:           eventType,
 	}
 
 	// 插入记录

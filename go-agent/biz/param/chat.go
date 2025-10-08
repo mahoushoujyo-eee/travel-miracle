@@ -13,3 +13,9 @@ type UploadFileRequest struct {
 	Size int64 `json:"size"`
 	ContentType string `json:"content_type"`
 }
+
+type SSEChatResponse struct {
+	Type string `json:"type"`
+	Content string `json:"content"`
+	ConversationId string `json:"conversation_id"`
+}

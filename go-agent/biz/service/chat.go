@@ -28,10 +28,12 @@ func NewChatService(ctx context.Context, c *app.RequestContext) *ChatService {
 	}
 }
 
-func (s *ChatService) Chat(request *param.ChatRequest) (chan string, error) {
+func (s *ChatService) Chat(request *param.ChatRequest) (chan *param.SSEChatResponse, error) {
 	conversationId := request.ConversationId
 	var messages []adk.Message
 	var err error
+	responseChan := make(chan *param.SSEChatResponse)
+
 	if conversationId == ""{
 		conversationId, err = agent.CreateConversation(s.ctx, request.UserId)
 		if err != nil {
@@ -93,31 +95,82 @@ func (s *ChatService) Chat(request *param.ChatRequest) (chan string, error) {
 
 		if event.Output.MessageOutput.IsStreaming {
 			// TODO: 处理流式输出
+			content := ""
+			reasoningContent := ""
+			stream := event.Output.MessageOutput.MessageStream
+			for {
+				msg, err := stream.Recv()
+				if err != nil {
+					// 检查是否是正常结束或可恢复的错误
+					if err.Error() == "EOF" || msg == nil {
+						log.Printf("\n流式传输正常结束\n")
+						break
+					}
+					// 对于超时等网络错误，记录日志但不终止程序
+					log.Printf("\n流式传输错误: %v\n", err)
+					break
+				}
+				if msg == nil {
+					break
+				}
+				if msg.Content != ""{
+					content += msg.Content
+					response := &param.SSEChatResponse{
+						Type: "stream-chat",
+						Content: msg.Content,
+						ConversationId: conversationId,
+					}
+					responseChan <- response
+				}
+
+				if msg.ReasoningContent != "" {
+					reasoningContent += msg.ReasoningContent
+					response := &param.SSEChatResponse{
+						Type: "stream-reasoning",
+						Content: msg.ReasoningContent,
+						ConversationId: conversationId,
+					}
+					responseChan <- response
+				}
+			}
+
+			if content != "" {
+				go agent.InsertMemory(s.ctx, conversationId, "stream-chat", content)
+			}
+			if reasoningContent != "" {
+				go agent.InsertMemory(s.ctx, conversationId, "stream-reasoning", reasoningContent)
+			}
 			continue
 		}else{
-			go agent.InsertMemory(s.ctx, conversationId, event.Output.MessageOutput)
-
+			go agent.InsertMemory(s.ctx, conversationId, event.Output.MessageOutput.Message.Name, event.Output.MessageOutput.Message.Content)
+			response := &param.SSEChatResponse{
+				Type: event.Output.MessageOutput.Message.Name,
+				Content: event.Output.MessageOutput.Message.Content,
+				ConversationId: conversationId,
+			}
+			responseChan <- response
 		}
 	}
 
-	return nil, nil
+	return responseChan, nil
 }
 
 func (s *ChatService) GetUploadUrl(request *param.UploadFileRequest) (*oss.PresignResult, error) {
 	var ossRequest *param.GetUploadUrlRequest
-	if request.Type == "image"{
+	switch request.Type {
+	case "image":
 		ossRequest = &param.GetUploadUrlRequest{
 			Bucket: viper.GetString("oss.img-bucket"),
 			Key: request.FileName,
 			ContentType: request.ContentType,
 		}
-	}else if request.Type == "file"{
+	case "file":
 		ossRequest = &param.GetUploadUrlRequest{
 			Bucket: viper.GetString("oss.file-bucket"),
 			Key: request.FileName,
 			ContentType: request.ContentType,
 		}
-	}else{
+	default:
 		return nil, errors.New("invalid upload type")
 	}
 
