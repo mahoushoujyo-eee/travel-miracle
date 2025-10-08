@@ -16,6 +16,7 @@ func InitRunner(ctx context.Context){
     DefaultRunner = adk.NewRunner(ctx, adk.RunnerConfig{
        Agent:           DefaultChatModelAgent,
        CheckPointStore: NewInMemoryStore(),
+       EnableStreaming: true,
     })
 }
 

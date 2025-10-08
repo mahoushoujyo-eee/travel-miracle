@@ -28,21 +28,20 @@ func NewChatService(ctx context.Context, c *app.RequestContext) *ChatService {
 	}
 }
 
-func (s *ChatService) Chat(request *param.ChatRequest) (chan *param.SSEChatResponse, error) {
+func (s *ChatService) Chat(request *param.ChatRequest, responseChan chan *param.SSEChatResponse) (error) {
 	conversationId := request.ConversationId
 	var messages []adk.Message
 	var err error
-	responseChan := make(chan *param.SSEChatResponse)
 
 	if conversationId == ""{
 		conversationId, err = agent.CreateConversation(s.ctx, request.UserId)
 		if err != nil {
-			return nil, err
+			return err
 		}
 	}else{
 		chatMemory, err := agent.GetMemoryList(s.ctx, conversationId)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
 		for _, memory := range chatMemory {
@@ -152,7 +151,7 @@ func (s *ChatService) Chat(request *param.ChatRequest) (chan *param.SSEChatRespo
 		}
 	}
 
-	return responseChan, nil
+	return nil
 }
 
 func (s *ChatService) GetUploadUrl(request *param.UploadFileRequest) (*oss.PresignResult, error) {
