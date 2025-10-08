@@ -9,8 +9,6 @@ import (
 	"travel/biz/util"
 
 	"github.com/aliyun/alibabacloud-oss-go-sdk-v2/oss"
-	"github.com/cloudwego/eino/adk"
-	"github.com/cloudwego/eino/schema"
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/spf13/viper"
 )
@@ -29,57 +27,25 @@ func NewChatService(ctx context.Context, c *app.RequestContext) *ChatService {
 }
 
 func (s *ChatService) Chat(request *param.ChatRequest, responseChan chan *param.SSEChatResponse) (error) {
+	// 添加panic恢复机制，防止程序崩溃
+	defer s.handleChatPanic(request, responseChan)
+
 	conversationId := request.ConversationId
-	var messages []adk.Message
-	var err error
-
-	if conversationId == ""{
-		conversationId, err = agent.CreateConversation(s.ctx, request.UserId)
-		if err != nil {
-			return err
-		}
-	}else{
-		chatMemory, err := agent.GetMemoryList(s.ctx, conversationId)
-		if err != nil {
-			return err
-		}
-
-		// TODO: Type Transformation
-		for _, memory := range chatMemory {
-			messages = append(messages, &schema.Message{
-				Role: schema.RoleType(memory.Type),
-				Content: memory.Prompt,
-			})
-		}
+	messages, conversationId, err := agent.GetHistoryMessageList(s.ctx, conversationId, request.UserId)
+	if err != nil {
+		return err
+	}
+	responseChan <- &param.SSEChatResponse{
+		Type: "start",
+		ConversationId: conversationId,
 	}
 
-	if len(request.ImgUrls) > 0 {
-		multiContent := []schema.ChatMessagePart{
-			{
-				Type: schema.ChatMessagePartTypeText,
-				Text: request.Prompt,
-			},
-		}
-		for _, url := range request.ImgUrls {
-			multiContent = append(multiContent, schema.ChatMessagePart{
-				Type: schema.ChatMessagePartTypeImageURL,
-				ImageURL: &schema.ChatMessageImageURL{
-					URL:    url,
-					Detail: schema.ImageURLDetailAuto,
-				},
-			})
-		}
-
-		messages = append(messages, &schema.Message{
-			Role: schema.User,
-			MultiContent: multiContent,
-		})
-	}else{
-		messages = append(messages, &schema.Message{
-			Role: schema.User,
-			Content: request.Prompt,
-		})
+	// 使用封装的函数创建用户消息
+	userMessage, err := agent.CreateUserMessage(s.ctx, conversationId, request.Prompt, request.ImgUrls)
+	if err != nil {
+		return err
 	}
+	messages = append(messages, userMessage)
 
 	iterator := agent.DefaultPlanRunner.Run(s.ctx, messages)
 	
@@ -91,6 +57,13 @@ func (s *ChatService) Chat(request *param.ChatRequest, responseChan chan *param.
 		if event.Err != nil {
 			// 记录错误但不终止程序，允许继续处理
 			log.Printf("\n事件处理错误: %v\n", event.Err)
+			continue // 跳过这个事件，继续处理下一个
+		}
+
+		// 添加nil检查，防止nil pointer dereference
+		if event.Output == nil || event.Output.MessageOutput == nil {
+			log.Printf("\n事件输出为空，跳过处理\n")
+			continue
 		}
 
 		if event.Output.MessageOutput.IsStreaming {
@@ -98,6 +71,13 @@ func (s *ChatService) Chat(request *param.ChatRequest, responseChan chan *param.
 			content := ""
 			reasoningContent := ""
 			stream := event.Output.MessageOutput.MessageStream
+			
+			// 检查stream是否为nil
+			if stream == nil {
+				log.Printf("\n流式传输stream为空，跳过处理\n")
+				continue
+			}
+			
 			for {
 				msg, err := stream.Recv()
 				if err != nil {
@@ -113,21 +93,21 @@ func (s *ChatService) Chat(request *param.ChatRequest, responseChan chan *param.
 				if msg == nil {
 					break
 				}
-				if msg.Content != ""{
-					content += msg.Content
-					response := &param.SSEChatResponse{
-						Type: "stream-chat",
-						Content: msg.Content,
-						ConversationId: conversationId,
-					}
-					responseChan <- response
-				}
 
 				if msg.ReasoningContent != "" {
 					reasoningContent += msg.ReasoningContent
 					response := &param.SSEChatResponse{
 						Type: "stream-reasoning",
 						Content: msg.ReasoningContent,
+						ConversationId: conversationId,
+					}
+					responseChan <- response
+				}
+				if msg.Content != ""{
+					content += msg.Content
+					response := &param.SSEChatResponse{
+						Type: "stream-chat",
+						Content: msg.Content,
 						ConversationId: conversationId,
 					}
 					responseChan <- response
@@ -142,11 +122,29 @@ func (s *ChatService) Chat(request *param.ChatRequest, responseChan chan *param.
 			}
 			continue
 		}else{
-			go agent.InsertMemory(s.ctx, conversationId, event.Output.MessageOutput.Message.Name, event.Output.MessageOutput.Message.Content)
-			response := &param.SSEChatResponse{
-				Type: event.Output.MessageOutput.Message.Name,
-				Content: event.Output.MessageOutput.Message.Content,
-				ConversationId: conversationId,
+			var response *param.SSEChatResponse
+
+			// 添加额外的nil检查，防止访问Message时出现panic
+			if event.Output.MessageOutput.Message == nil {
+				log.Printf("\n消息内容为空，跳过处理\n")
+				continue
+			}
+
+			if event.Output.MessageOutput.Message.ToolName != "" {
+				go agent.InsertMemoryWithTool(s.ctx, conversationId, string(event.Output.MessageOutput.Role), event.Output.MessageOutput.Message.Content, event.Output.MessageOutput.Message.ToolName)
+				response = &param.SSEChatResponse{
+					Type: string(event.Output.MessageOutput.Role) + ":" + event.Output.MessageOutput.Message.ToolName,
+					Content: event.Output.MessageOutput.Message.Content,
+					ConversationId: conversationId,
+				}
+				log.Printf("\n工具调用: %v\n", event.Output.MessageOutput.Message.ToolCalls)
+			} else {
+				go agent.InsertMemory(s.ctx, conversationId, string(event.Output.MessageOutput.Role), event.Output.MessageOutput.Message.Content)
+				response = &param.SSEChatResponse{
+					Type: string(event.Output.MessageOutput.Role),
+					Content: event.Output.MessageOutput.Message.Content,
+					ConversationId: conversationId,
+				}
 			}
 			responseChan <- response
 		}
@@ -175,4 +173,22 @@ func (s *ChatService) GetUploadUrl(request *param.UploadFileRequest) (*oss.Presi
 	}
 
 	return util.GetUploadUrl(ossRequest, s.ctx)
+}
+
+// handleChatPanic 处理Chat函数中的panic恢复
+func (s *ChatService) handleChatPanic(request *param.ChatRequest, responseChan chan *param.SSEChatResponse) {
+	if r := recover(); r != nil {
+		log.Printf("Chat函数发生panic，已恢复: %v", r)
+		// 发送错误响应给客户端
+		errorResponse := &param.SSEChatResponse{
+			Type: "error",
+			Content: "服务暂时不可用，请稍后重试",
+			ConversationId: request.ConversationId,
+		}
+		select {
+		case responseChan <- errorResponse:
+		default:
+			// 如果channel已关闭，忽略
+		}
+	}
 }

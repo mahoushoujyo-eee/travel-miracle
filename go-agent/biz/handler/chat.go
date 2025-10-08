@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"encoding/json"
 	"travel/biz/param"
 	"travel/biz/service"
 	"travel/biz/util"
@@ -36,9 +37,20 @@ func ChatHandler(ctx context.Context, c *app.RequestContext) {
 		}
 	}()
 	for response := range responseChan {
+		// 创建包含content和conversationId的JSON数据
+		responseData := map[string]string{
+			"content":         response.Content,
+			"conversationId":  response.ConversationId,
+		}
+		jsonData, err := json.Marshal(responseData)
+		if err != nil {
+			// 如果JSON序列化失败，回退到原来的方式
+			jsonData = []byte(response.Content)
+		}
+		
 		sseSender.Send(ctx, &sse.Event{
 			Event: response.Type,
-			Data:  []byte(response.Content),
+			Data:  jsonData,
 		})
 	}
 }

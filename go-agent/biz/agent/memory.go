@@ -2,6 +2,7 @@ package agent
 
 import (
 	"context"
+	"encoding/json"
 	"travel/biz/config"
 	"travel/biz/model"
 
@@ -53,6 +54,43 @@ func InsertMemory(ctx context.Context, conversationId string, eventType string, 
 		ConversationId: conversationId,
 		Prompt:         content,
 		Type:           eventType,
+	}
+
+	// 插入记录
+	if err := config.DB.WithContext(ctx).Create(memory).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func InsertMemoryWithImgs(ctx context.Context, conversationId string, eventType string, content string, imgUrls []string) error {
+	// 将imgUrls序列化为JSON字符串
+	imgUrlsJSON, err := json.Marshal(imgUrls)
+	if err != nil {
+		return err
+	}
+	
+	memory := &model.ChatMemory{
+		ConversationId: conversationId,
+		Prompt:         content,
+		Type:           eventType,
+		Metadata:       string(imgUrlsJSON),
+	}
+
+	// 插入记录
+	if err := config.DB.WithContext(ctx).Create(memory).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func InsertMemoryWithTool(ctx context.Context, conversationId string, eventType string, content string, tool string) error {
+	// TODO: 处理类型转换
+	memory := &model.ChatMemory{
+		ConversationId: conversationId,
+		Prompt:         content,
+		Type:           eventType,
+		Metadata:       tool,
 	}
 
 	// 插入记录
