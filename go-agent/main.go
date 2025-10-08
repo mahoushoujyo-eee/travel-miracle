@@ -4,6 +4,7 @@ package main
 
 import (
 	"context"
+	"travel/biz/agent"
 	"travel/biz/config"
 	"travel/biz/middleware"
 
@@ -15,8 +16,9 @@ import (
 func main() {
 	ctx := context.Background()
 	config.InitAll(ctx)
+	agent.InitAll(ctx)
 	middleware.InitAll()
-	h := server.Default(server.WithHostPorts("0.0.0.0:" + viper.GetString("app.port")), server.WithStreamBody(true))
+	h := server.Default(server.WithHostPorts(":" + viper.GetString("app.port")))
 	h.Use(accesslog.New())
 
 	register(h)

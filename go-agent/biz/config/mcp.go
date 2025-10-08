@@ -71,14 +71,15 @@ func InitMcpTools(ctx context.Context) {
 		}
 		log.Printf("successfully initialized MCP server: %s, tools count: %d", server.URL, len(mcpTools))
 
-		for _, t := range mcpTools {
-			info, err := t.Info(ctx)
-			if err != nil {
-				log.Printf("failed to get tool info: %v", err)
-				continue
-			}
-			log.Printf("tool name: %s, desc: %s", info.Name, info.Desc)
-		}
+		// comment out the tool info log, as it will print the tool desc, which is too long
+		// for _, t := range mcpTools {
+		// 	info, err := t.Info(ctx)
+		// 	if err != nil {
+		// 		log.Printf("failed to get tool info: %v", err)
+		// 		continue
+		// 	}
+		// 	log.Printf("tool name: %s, desc: %s", info.Name, info.Desc)
+		// }
 
 		toolNodes, err = compose.NewToolNode(ctx, &compose.ToolsNodeConfig{
 			Tools: mcpTools,

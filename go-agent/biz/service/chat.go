@@ -44,6 +44,7 @@ func (s *ChatService) Chat(request *param.ChatRequest, responseChan chan *param.
 			return err
 		}
 
+		// TODO: Type Transformation
 		for _, memory := range chatMemory {
 			messages = append(messages, &schema.Message{
 				Role: schema.RoleType(memory.Type),

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"sync"
+	"travel/biz/model"
 
 	"github.com/spf13/viper"
 	"gorm.io/driver/mysql"
@@ -51,7 +52,7 @@ func InitDatabase(ctx context.Context) {
 
 		log.Printf("Successfully connected to MySQL database: %s", database)
 		log.Printf("Executing Migration")
-		DB.AutoMigrate()
+		DB.AutoMigrate(&model.Conversation{}, &model.ChatMemory{})
 		log.Printf("Migration completed")
 	})
 }

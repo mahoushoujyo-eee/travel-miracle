@@ -27,10 +27,14 @@ func ChatHandler(ctx context.Context, c *app.RequestContext) {
 	}
 	responseChan := make(chan *param.SSEChatResponse)
 	sseSender := util.NewSSESender(sse.NewStream(c))
-	if err := service.NewChatService(ctx, c).Chat(request, responseChan); err != nil {
-		c.JSON(consts.StatusOK, param.ResponseError(consts.StatusInternalServerError, err.Error()))
-		return
-	}
+
+	go func() {
+		defer close(responseChan)
+		if err := service.NewChatService(ctx, c).Chat(request, responseChan); err != nil {
+			c.JSON(consts.StatusOK, param.ResponseError(consts.StatusInternalServerError, err.Error()))
+			return
+		}
+	}()
 	for response := range responseChan {
 		sseSender.Send(ctx, &sse.Event{
 			Event: response.Type,

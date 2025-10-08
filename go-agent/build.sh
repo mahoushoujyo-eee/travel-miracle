@@ -1,6 +1,5 @@
 #!/bin/bash
 RUN_NAME=hertz_service
-mkdir -p output/bin
-cp script/* output 2>/dev/null
-chmod +x output/bootstrap.sh
-go build -o output/bin/${RUN_NAME}
+echo "构建 Travel Planner Go Agent..."
+go build -o ${RUN_NAME}
+echo "构建完成: ${RUN_NAME}"
