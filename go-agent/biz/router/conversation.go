@@ -11,5 +11,6 @@ func RegisterConversation(r *route.RouterGroup) {
 	{
 		conversationRouter.POST("/list", handler.GetConversationListHandler)
 		conversationRouter.POST("/messages", handler.GetMemoryListHandler)
+		conversationRouter.POST("/delete", handler.DeleteConversationHandler)
 	}					
 }

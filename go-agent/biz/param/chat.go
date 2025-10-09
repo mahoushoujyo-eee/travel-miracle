@@ -1,21 +1,22 @@
 package param
 
 type ChatRequest struct {
-	Prompt         string `json:"prompt"`
-	ImgUrls         []string `json:"img_urls"`
-	UserId         int64  `json:"user_id"`
-	ConversationId string `json:"conversation_id"`
+	Prompt         string   `json:"prompt"`
+	ImgUrls        []string `json:"img_urls"`
+	UserId         int64    `json:"user_id"`
+	ConversationId string   `json:"conversation_id"`
+	Agent          string   `json:"agent"`
 }
 
 type UploadFileRequest struct {
-	Type string `json:"type"`
-	FileName string `json:"file_name"`
-	Size int64 `json:"size"`
+	Type        string `json:"type"`
+	FileName    string `json:"file_name"`
+	Size        int64  `json:"size"`
 	ContentType string `json:"content_type"`
 }
 
 type SSEChatResponse struct {
-	Type string `json:"type"`
-	Content string `json:"content"`
+	Type           string `json:"type"`
+	Content        string `json:"content"`
 	ConversationId string `json:"conversation_id"`
 }

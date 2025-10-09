@@ -24,3 +24,11 @@ var GetMemoryListHandler = GenericHandler(func(ctx context.Context, c *app.Reque
 		}
 		return &result, nil
 	})
+
+var DeleteConversationHandler = GenericHandler(func(ctx context.Context, c *app.RequestContext, request *param.ChatRequest) (*int, error) {
+		err := service.NewConversationService(ctx, c).DeleteConversation(request)
+		if err != nil {
+			return nil, err
+		}
+		return nil, nil
+	})

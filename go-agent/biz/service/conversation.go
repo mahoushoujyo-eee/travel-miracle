@@ -37,3 +37,17 @@ func (s *ConversationService) GetMemoryList(request *param.ChatRequest) ([]*mode
 	}
 	return memories, nil
 }
+
+func (s *ConversationService) DeleteConversation(request *param.ChatRequest) error {
+	if err := config.DB.WithContext(s.ctx).Model(&model.Conversation{}).
+		Where("id = ?", request.ConversationId).
+		Delete(&model.Conversation{}).Error; err != nil {
+		return err
+	}
+	if err := config.DB.WithContext(s.ctx).Model(&model.ChatMemory{}).
+		Where("conversation_id = ?", request.ConversationId).
+		Delete(&model.ChatMemory{}).Error; err != nil {
+		return err
+	}
+	return nil
+}

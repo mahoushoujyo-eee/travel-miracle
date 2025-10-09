@@ -2,6 +2,7 @@ package agent
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"travel/biz/config"
@@ -11,7 +12,7 @@ import (
 )
 
 // CreateUserMessage 创建用户消息，支持文本和图片
-func CreateUserMessage(ctx context.Context, conversationId string, prompt string, imgUrls []string) (adk.Message, error) {
+func CreateUserMessageAndStore(ctx context.Context, conversationId string, prompt string, imgUrls []string) (adk.Message, error) {
 	if len(imgUrls) > 0 {
 		multiContent := []schema.ChatMessagePart{
 			{
@@ -35,8 +36,11 @@ func CreateUserMessage(ctx context.Context, conversationId string, prompt string
 		}
 
 		// 异步插入带图片的记忆
-		go InsertMemoryWithImgs(ctx, conversationId, string(schema.User), prompt, imgUrls)
-		
+		go func(){
+			imgUrlsStr, _ := json.Marshal(imgUrls)
+			InsertMemoryWithMetaData(ctx, conversationId, "user-img", prompt, "img-text")
+			InsertMemoryWithMetaData(ctx, conversationId, string(schema.User), string(imgUrlsStr), "img-urls")
+		}()
 		return message, nil
 	} else {
 		message := &schema.Message{
@@ -81,6 +85,10 @@ func GetHistoryMessageList(ctx context.Context, conversationId string, userId in
 
 		// TODO: Type Transformation
 		for _, memory := range chatMemory {
+			if memory.Metadata == "img-text" {
+
+			}
+
 			messages = append(messages, &schema.Message{
 				Role: TransformMemoryRoleToMessage(memory.Type),
 				Content: memory.Prompt,

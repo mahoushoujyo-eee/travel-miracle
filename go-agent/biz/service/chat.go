@@ -9,6 +9,7 @@ import (
 	"travel/biz/util"
 
 	"github.com/aliyun/alibabacloud-oss-go-sdk-v2/oss"
+	"github.com/cloudwego/eino/adk"
 	"github.com/cloudwego/hertz/pkg/app"
 	"github.com/spf13/viper"
 )
@@ -40,13 +41,23 @@ func (s *ChatService) Chat(request *param.ChatRequest, responseChan chan *param.
 	}
 
 	// 使用封装的函数创建用户消息
-	userMessage, err := agent.CreateUserMessage(s.ctx, conversationId, request.Prompt, request.ImgUrls)
+	userMessage, err := agent.CreateUserMessageAndStore(s.ctx, conversationId, request.Prompt, request.ImgUrls)
 	if err != nil {
 		return err
 	}
 	messages = append(messages, userMessage)
 
-	iterator := agent.DefaultPlanRunner.Run(s.ctx, messages)
+	var userRunner *adk.Runner
+	switch request.Agent {
+	case "default":
+	case "planner":
+		userRunner = agent.DefaultPlanRunner
+	case "recommender":
+		userRunner = agent.DefaultRecommendRunner
+	default:
+		userRunner = agent.DefaultPlanRunner
+	}
+	iterator := userRunner.Run(s.ctx, messages)
 
 	for {
 		event, ok := iterator.Next()
