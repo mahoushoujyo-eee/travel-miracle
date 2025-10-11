@@ -26,7 +26,7 @@ func InitIndexer(ctx context.Context) {
 }
 
 func RunDemo(ctx context.Context){
-		// Store documents
+	// Store documents
 	docs := []*schema.Document{
 		{
 			ID:      "milvus-1",

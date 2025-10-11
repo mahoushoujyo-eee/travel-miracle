@@ -14,7 +14,6 @@ func RegisterChat(r *route.RouterGroup) {
 		chatRouter.GET("/conversations", )
 		chatRouter.GET("/conversations/:id/messages", )
 		chatRouter.POST("/conversation", )
-		chatRouter.GET("/files", )
 		chatRouter.POST("/files", handler.GetUploadUrlHandler)
 		chatRouter.POST("/stream", handler.ChatHandler)
 	}

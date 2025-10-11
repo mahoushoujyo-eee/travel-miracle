@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"time"
 	"travel/biz/config"
 
 	"github.com/cloudwego/eino/adk"
@@ -22,7 +21,7 @@ var (
 func InitPlanRunner(ctx context.Context){
 	// 合并多个工具
 	var allTools []tool.BaseTool
-	allTools = append(allTools, config.ToolMap["amp"]...)    // 高德地图工具
+	allTools = append(allTools, config.ToolMap["amap"]...)    // 高德地图工具
 	allTools = append(allTools, config.ToolMap["12306"]...)  // 12306工具
 
 	name := "出行路线规划小助手"
@@ -40,8 +39,7 @@ func InitRecommendRunner(ctx context.Context){
 
 	name := "景点推荐小助手"
 	description := "一个帮助他人推荐景点的助手"
-	currentTime := time.Now().Format("2006-01-02 15:04:05")
-	systemPrompt := fmt.Sprintf("你是一个可以使用jina和fetch工具帮助他人推荐景点的助手，可以搜索和获取景点信息，根据他人的喜好来推荐合适的景点。当前时间：%s", currentTime)
+	systemPrompt := "你是一个可以使用jina和fetch工具帮助他人推荐景点的助手，可以搜索和获取景点信息，根据他人的喜好来推荐合适的景点。"
 	DefaultRecommendAgent = NewAgent(ctx, name, description, systemPrompt, allTools)
     DefaultRecommendRunner = NewRunner(ctx, DefaultRecommendAgent)
 }

@@ -38,7 +38,7 @@ func CreateUserMessageAndStore(ctx context.Context, conversationId string, promp
 		// 异步插入带图片的记忆
 		go func() {
 			imgUrlsStr, _ := json.Marshal(imgUrls)
-			InsertMemoryWithMetaData(ctx, conversationId, "user-img", prompt, "img-text")
+			InsertMemoryWithMetaData(ctx, conversationId, string(schema.User), prompt, "img-text")
 			InsertMemoryWithMetaData(ctx, conversationId, string(schema.User), string(imgUrlsStr), "img-urls")
 		}()
 		return message, nil

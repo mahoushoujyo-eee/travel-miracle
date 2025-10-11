@@ -73,5 +73,3 @@ func InitModel(ctx context.Context) {
 	
 	log.Printf("Model initalized!")
 }
-
-
