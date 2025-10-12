@@ -23,4 +23,9 @@ func GeneratedRegister(r *server.Hertz) {
 	{
 		RegisterConversation(conversationRouter)
 	}
+
+	feedbackRouter := r.Group("/feedback")
+	{
+		RegisterFeedback(feedbackRouter)
+	}
 }

@@ -52,7 +52,7 @@ func InitDatabase(ctx context.Context) {
 
 		log.Printf("Successfully connected to MySQL database: %s", database)
 		log.Printf("Executing Migration")
-		DB.AutoMigrate(&model.Conversation{}, &model.ChatMemory{})
+		DB.AutoMigrate(&model.Conversation{}, &model.ChatMemory{}, &model.Feedback{})
 		log.Printf("Migration completed")
 	})
 }
