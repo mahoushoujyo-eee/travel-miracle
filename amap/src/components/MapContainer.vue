@@ -14,7 +14,7 @@ onMounted(() =>
   {
     key: "0efec05f109e098f43372e271e03a3b6", // 申请好的Web端开发者Key，首次调用 load 时必填
     version: "2.0", // 指定要加载的 JSAPI 的版本，缺省时默认为 1.4.15
-    plugins: ["AMap.ToolBar", "AMap.Scale", "AMap.PlaceSearch", "AMap.Geolocation", "AMap.PlaceSearch"], // 需要使用的的插件列表，要先在此处声明
+    plugins: ["AMap.ToolBar", "AMap.Scale", "AMap.PlaceSearch", "AMap.Geolocation", "AMap.PlaceSearch", "AMap.DragRoute"], // 需要使用的的插件列表，要先在此处声明
   })
   .then((AMap) => 
   {
@@ -22,8 +22,8 @@ onMounted(() =>
     {
         // 设置地图容器id
         viewMode: "2D", // 是否为3D地图模式
-        zoom: 14, // 初始化地图级别
-        center: [116.397428, 39.90923], // 初始化地图中心点位置
+        zoom: 16, // 初始化地图级别
+        center: [118.7915619, 32.0615513], // 初始化地图中心点位置:经纬度
     });
     const toolbar = new AMap.ToolBar(); //创建工具条插件实例
     map.addControl(toolbar); //添加工具条插件到页面
@@ -46,6 +46,14 @@ onMounted(() =>
     };
     const MSearch = new AMap.PlaceSearch(PlaceSearchOptions); //构造PlaceSearch类
     MSearch.search('南京师范大学', (status, result)=>{console.log(status, result)}); //关键字查询
+
+    var path = [];
+    path.push([116.303843, 39.983412]);
+    path.push([116.321354, 39.896436]);
+    path.push([116.407012, 39.992093]);
+    var route = new AMap.DragRoute(map, path, 0);//0为驾车导航 
+    //查询导航路径并开启拖拽导航
+    route.search();
   })
   .catch((e) => 
   {
