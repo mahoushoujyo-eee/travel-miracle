@@ -2,7 +2,7 @@ app:
   name: travel-planner
   port: 42080
 mysql:
-  host: 156.239.235.71
+  host: 156.226.182.222
   port: 3306
   database: travelplanner
   user: travelplanner
