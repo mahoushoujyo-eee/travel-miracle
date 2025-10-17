@@ -49,11 +49,12 @@ func (s *ChatService) Chat(request *param.ChatRequest, responseChan chan *param.
 
 	var userRunner *adk.Runner
 	switch request.Agent {
-	case "default":
 	case "planner":
 		userRunner = agent.DefaultPlanRunner
+		log.Printf("\n使用计划助手: %v\n", request.Agent)
 	case "recommender":
 		userRunner = agent.DefaultRecommendRunner
+		log.Printf("\n使用推荐助手: %v\n", request.Agent)
 	default:
 		userRunner = agent.DefaultPlanRunner
 	}
@@ -62,11 +63,14 @@ func (s *ChatService) Chat(request *param.ChatRequest, responseChan chan *param.
 	for {
 		event, ok := iterator.Next()
 		if !ok {
+			log.Printf("\n迭代器异常或结束\n")
 			break
 		}
+		log.Printf("\n event action: %v", event.Action)
 		if event.Err != nil {
 			// 记录错误但不终止程序，允许继续处理
 			log.Printf("\n事件处理错误: %v\n", event.Err)
+			log.Printf("\n事件处理错误输出: %v\n", event.Output)
 			continue // 跳过这个事件，继续处理下一个
 		}
 
@@ -150,7 +154,7 @@ func (s *ChatService) Chat(request *param.ChatRequest, responseChan chan *param.
 					Content:        event.Output.MessageOutput.Message.Content,
 					ConversationId: conversationId,
 				}
-				log.Printf("\n工具调用: %v\n", event.Output.MessageOutput.Message.ToolCalls)
+				log.Printf("\n工具调用: %v\n", event.Output.MessageOutput.Message.ToolName)
 			} else {
 				go agent.InsertMemory(s.ctx, conversationId, string(event.Output.MessageOutput.Role), event.Output.MessageOutput.Message.Content)
 				response = &param.SSEChatResponse{

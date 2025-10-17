@@ -16,6 +16,7 @@ func InitAll(ctx context.Context) {
 	InitModel(ctx)
 	InitMcpTools(ctx)
 	InitRedisClient(ctx)
+	InitCozeloop(ctx)
 	// config.InitVDateBase(ctx)
 	// config.InitRetriever(ctx)
 	// config.InitIndexer(ctx)

@@ -2,8 +2,6 @@ package agent
 
 import (
 	"context"
-	"fmt"
-	"log"
 	"travel/biz/config"
 
 	"github.com/cloudwego/eino/adk"
@@ -15,6 +13,8 @@ var (
 	DefaultPlanRunner *adk.Runner
 	DefaultRecommendAgent adk.Agent
 	DefaultRecommendRunner *adk.Runner
+	DefaultWebSearchAgent adk.Agent
+	DefaultWebSearchRunner *adk.Runner
 )
 
 
@@ -34,58 +34,26 @@ func InitPlanRunner(ctx context.Context){
 func InitRecommendRunner(ctx context.Context){
 	// 合并多个工具
 	var allTools []tool.BaseTool
-	allTools = append(allTools, config.ToolMap["jina"]...)    // jina工具
-	allTools = append(allTools, config.ToolMap["fetch"]...)  // fetch工具
+	// allTools = append(allTools, config.ToolMap["jina"]...)    // jina工具
+	// allTools = append(allTools, config.ToolMap["fetch"]...)  // fetch工具
+	allTools = append(allTools, config.ToolMap["amap"]...)    // 高德地图工具
 
 	name := "景点推荐小助手"
 	description := "一个帮助他人推荐景点的助手"
-	systemPrompt := "你是一个可以使用jina和fetch工具帮助他人推荐景点的助手，可以搜索和获取景点信息，根据他人的喜好来推荐合适的景点。"
+	systemPrompt := "你是一个可以使用工具帮助他人推荐景点的助手，在推荐周围景点的时候先使用amap相关工具来搜索周围的景点，然后再调用搜索工具查看景点详细信息，最后根据用户的喜好来推荐合适的景点，注意如果无特殊要求请不要推荐大于十个景点。"
 	DefaultRecommendAgent = NewAgent(ctx, name, description, systemPrompt, allTools)
     DefaultRecommendRunner = NewRunner(ctx, DefaultRecommendAgent)
 }
 
-func HandleIterator(iterator *adk.AsyncIterator[*adk.AgentEvent]) {
-	for {
-		event, ok := iterator.Next()
-		if !ok {
-			break
-		}
-		if event.Err != nil {
-			// 记录错误但不终止程序，允许继续处理
-			fmt.Printf("\n事件处理错误: %v\n", event.Err)
-		}
+func InitWebSearchRunner(ctx context.Context){
+	// 合并多个工具
+	var allTools []tool.BaseTool
+	allTools = append(allTools, config.ToolMap["jina"]...)    // jina工具
+	allTools = append(allTools, config.ToolMap["fetch"]...)  // fetch工具
 
-		if event.Output.MessageOutput.IsStreaming {
-			stream := event.Output.MessageOutput.MessageStream
-			for {
-				msg, err := stream.Recv()
-				if err != nil {
-					// 检查是否是正常结束或可恢复的错误
-					if err.Error() == "EOF" || msg == nil {
-						fmt.Printf("\n流式传输正常结束\n")
-						break
-					}
-					// 对于超时等网络错误，记录日志但不终止程序
-					fmt.Printf("\n流式传输错误: %v\n", err)
-					break
-				}
-				if msg == nil {
-					break
-				}
-				if msg.Content != ""{
-					fmt.Printf("%v", msg)
-				}
-
-				if msg.ReasoningContent != "" {
-					fmt.Printf("%s", msg.ReasoningContent)
-				}
-			}
-		}else{
-			msg, err := event.Output.MessageOutput.GetMessage()
-			if err != nil {
-				log.Fatal(err)
-			}
-			fmt.Printf("\nmessage:\n%v\n", msg.Content)
-		}
-	}
+	name := "网络搜索小助手"
+	description := "一个帮助他人进行网络搜索的助手"
+	systemPrompt := "你是一个可以使用工具帮助他人进行网络搜索的助手，在搜索的时候先使用jina\fetch相关工具来搜索用户需要的内容并进行一定总结。"
+	DefaultWebSearchAgent = NewAgent(ctx, name, description, systemPrompt, allTools)
+    DefaultWebSearchRunner = NewRunner(ctx, DefaultWebSearchAgent)
 }
